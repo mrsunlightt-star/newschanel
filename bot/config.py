@@ -32,7 +32,7 @@ CHAT_ID = _env("TELEGRAM_CHAT_ID")
 # --- LLM：任意 OpenAI 兼容接口（Groq / Gemini 的 OpenAI 端点 / OpenRouter / DeepSeek 等）---
 LLM_API_KEY = _env("LLM_API_KEY")
 LLM_BASE_URL = _env("LLM_BASE_URL", "https://api.groq.com/openai/v1")
-LLM_MODEL = _env("LLM_MODEL", "llama-3.3-70b-versatile")
+LLM_MODEL = _env("LLM_MODEL", "openai/gpt-oss-120b")
 
 # --- 抓取与发帖 ---
 # hnrss 在部分国内网络下握手异常，GitHub Actions（海外）不受影响
