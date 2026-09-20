@@ -13,16 +13,26 @@ def _load_dotenv():
         pass
 
 
+def _env(name: str, default: str = "") -> str:
+    """读取环境变量；未设置或为空字符串时返回默认值。
+
+    GitHub Actions 里未配置的 Variables 会展开成空串传入，
+    必须视为"未设置"才能落到默认值。
+    """
+    value = os.environ.get(name, "")
+    return value if value.strip() else default
+
+
 _load_dotenv()
 
 # --- Telegram（必填）---
-BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
-CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
+BOT_TOKEN = _env("TELEGRAM_BOT_TOKEN")
+CHAT_ID = _env("TELEGRAM_CHAT_ID")
 
 # --- LLM：任意 OpenAI 兼容接口（Groq / Gemini 的 OpenAI 端点 / OpenRouter / DeepSeek 等）---
-LLM_API_KEY = os.environ.get("LLM_API_KEY", "")
-LLM_BASE_URL = os.environ.get("LLM_BASE_URL", "https://api.groq.com/openai/v1")
-LLM_MODEL = os.environ.get("LLM_MODEL", "llama-3.3-70b-versatile")
+LLM_API_KEY = _env("LLM_API_KEY")
+LLM_BASE_URL = _env("LLM_BASE_URL", "https://api.groq.com/openai/v1")
+LLM_MODEL = _env("LLM_MODEL", "llama-3.3-70b-versatile")
 
 # --- 抓取与发帖 ---
 # hnrss 在部分国内网络下握手异常，GitHub Actions（海外）不受影响
@@ -33,7 +43,7 @@ DEFAULT_FEEDS = [
     "https://www.ithome.com/rss/",
     "https://www.solidot.org/index.rss",
 ]
-_feeds_env = os.environ.get("RSS_FEEDS", "")
+_feeds_env = _env("RSS_FEEDS")
 RSS_FEEDS = [u.strip() for u in _feeds_env.split(",") if u.strip()] or DEFAULT_FEEDS
 
 FETCH_HOURS = int(os.environ.get("FETCH_HOURS", "6"))  # 只看最近 N 小时内的条目
