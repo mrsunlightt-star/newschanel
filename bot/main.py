@@ -35,9 +35,11 @@ def run(dry_run: bool) -> int:
         if digest is None:
             log.warning("摘要生成失败，降级用原文概要: %s", item["title"])
         text = publisher.render(item, digest)
-        if publisher.send(text):
+        message_id = publisher.send(text, item["link"])
+        if message_id:
             dedup.mark_posted(item["link"], item["title"])
             sent += 1
+            publisher.add_reaction(message_id)
             log.info("已发布: %s", item["title"])
         else:
             log.error("发送失败，该条未标记，下次运行会重试: %s", item["title"])
