@@ -35,7 +35,7 @@ def run(dry_run: bool) -> int:
         if digest is None:
             log.warning("摘要生成失败，降级用原文概要: %s", item["title"])
         image = ""
-        if config.CARD_MODE == "image":  # 纯文字模式跳过一切图片抓取，省时省流量
+        if config.CARD_MODE in ("auto", "image"):  # text 模式跳过一切图片抓取，省时省流量
             image = item.get("image", "") or fetcher.og_image(item["link"])
         caption = publisher.render(item, digest)
         message_id = publisher.deliver(image, caption)
@@ -43,7 +43,8 @@ def run(dry_run: bool) -> int:
             dedup.mark_posted(item["link"], item["title"])
             sent += 1
             publisher.add_reaction(message_id)
-            log.info("已发布: %s", item["title"])
+            kind = "图片卡片" if image else "文字卡片"
+            log.info("已发布(%s): %s", kind, item["title"])
         else:
             log.error("发送失败，该条未标记，下次运行会重试: %s", item["title"])
         time.sleep(config.SEND_INTERVAL)

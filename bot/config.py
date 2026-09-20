@@ -58,8 +58,11 @@ CHANNEL_LINKS = _env("CHANNEL_LINKS", "📢 频道|https://t.me/techscinew")
 COVER_ASPECT = _env("COVER_ASPECT", "16:9")
 COVER_WIDTH = int(os.environ.get("COVER_WIDTH", "1280"))  # 裁剪后目标宽度（像素）
 
-# 卡片形态：text = 紧凑纯文字卡片（无图，一屏可刷十几条）；image = 宽幅封面图媒体卡片
-CARD_MODE = _env("CARD_MODE", "text")
+# 卡片形态（按条分发）：
+#   auto  = 自适应（默认）：条目有图走媒体卡片模板，无图自动落到纯文字紧凑卡片
+#   text  = 全部纯文字紧凑卡片（跳过一切图片抓取，速度最快）
+#   image = 全部尽力带图（og:image 兜底，实在无图才纯文字）
+CARD_MODE = _env("CARD_MODE", "auto")
 
 DB_PATH = os.environ.get(
     "DB_PATH",
