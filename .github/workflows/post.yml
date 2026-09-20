@@ -17,7 +17,9 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # 晚高峰 LLM 限流时单条摘要可能退避数分钟，5 条最坏约 18 分钟；
+    # 上限须留足余量避免运行被腰斩——被杀的运行无法回存 news.db，会导致已发帖子重复
+    timeout-minutes: 24
     steps:
       - uses: actions/checkout@v4
 
