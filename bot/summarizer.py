@@ -40,29 +40,43 @@ def _parse_json(text: str) -> dict | None:
     return None
 
 
+def _request(payload: dict) -> str:
+    resp = requests.post(
+        f"{config.LLM_BASE_URL.rstrip('/')}/chat/completions",
+        headers={"Authorization": f"Bearer {config.LLM_API_KEY}"},
+        json=payload,
+        timeout=60,
+    )
+    resp.raise_for_status()
+    return resp.json()["choices"][0]["message"]["content"]
+
+
 def summarize(title: str, source: str, content: str) -> dict | None:
     """返回 {"summary_zh": ..., "summary_en": ...}，失败返回 None。"""
+    payload = {
+        "model": config.LLM_MODEL,
+        "messages": [
+            {
+                "role": "user",
+                "content": PROMPT.format(
+                    title=title, source=source, content=content or title
+                ),
+            }
+        ],
+        "temperature": 0.3,
+        # 预算放宽：gpt-oss 等推理模型会先消耗输出 token 进行思考
+        "max_tokens": 1500,
+        # 推理模型限制思考长度，保证留有预算产出最终摘要
+        "reasoning_effort": "low",
+    }
+    text = ""
     try:
-        resp = requests.post(
-            f"{config.LLM_BASE_URL.rstrip('/')}/chat/completions",
-            headers={"Authorization": f"Bearer {config.LLM_API_KEY}"},
-            json={
-                "model": config.LLM_MODEL,
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": PROMPT.format(
-                            title=title, source=source, content=content or title
-                        ),
-                    }
-                ],
-                "temperature": 0.3,
-                "max_tokens": 600,
-            },
-            timeout=60,
-        )
-        resp.raise_for_status()
-        text = resp.json()["choices"][0]["message"]["content"]
+        try:
+            text = _request(payload)
+        except Exception:
+            # 部分严格服务不认识 reasoning_effort 参数，去掉后重试一次
+            payload.pop("reasoning_effort", None)
+            text = _request(payload)
     except Exception as exc:
         log.error("LLM 调用失败: %s", exc)
         return None
