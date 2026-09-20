@@ -43,11 +43,15 @@ LLM_MAX_TOKENS = int(os.environ.get("LLM_MAX_TOKENS", "950"))
 DEFAULT_FEEDS = [
     "https://www.ithome.com/rss/",              # 中文 · 数码科技快讯
     "https://openai.com/news/rss.xml",          # AI官方 · OpenAI 博客（GPT/产品发布）
+    "https://feeds.bbci.co.uk/news/world/rss.xml",  # 国际新闻 · BBC 世界
     "https://scitechdaily.com/feed/",           # 英文 · 综合科学新闻（天文/物理/生物/考古）
     "https://www.sspai.com/feed",               # 中文 · 消费电子与效率工具
     "https://status.deepseek.com/history.rss",  # 中文 · DeepSeek 服务状态（故障/恢复即时通报）
+    "https://www.theguardian.com/world/rss",    # 国际新闻 · 卫报世界
     "https://phys.org/rss-feed/",               # 英文 · 硬科学研究快讯（物理/地球/空间/生命）
     "https://www.solidot.org/index.rss",        # 中文 · 科技与科学趣闻
+    # 路透社已关闭公开 RSS，用 Google News 按 site 限定的搜索 RSS 桥接
+    "https://news.google.com/rss/search?q=site:reuters.com+when:1d&hl=en-US&gl=US&ceid=US:en",  # 通讯社 · 路透社报道
     "https://deepmind.google/blog/rss.xml",     # AI官方 · Google DeepMind 博客（Gemini 等）
     "https://api.quantamagazine.org/feed/",     # 英文 · 深度科学报道（数学/物理/生命科学）
     "https://huggingface.co/blog/feed.xml",     # AI官方 · HuggingFace 开源社区技术博客

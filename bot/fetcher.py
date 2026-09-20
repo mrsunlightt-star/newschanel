@@ -104,9 +104,16 @@ def fetch_all() -> list[dict]:
                 # 有发布时间的按时间窗过滤；没有时间的交给去重逻辑兜底
                 if published and published < since:
                     continue
+                source = (feed.feed.get("title") or url).strip()
+                if "Google News" in source:
+                    # Google News 桥接源：条目标题形如「headline - Publisher」，
+                    # 拆出真实标题与来源媒体名，卡片上不显示 Google News
+                    m = re.match(r"^(.*)\s+-\s+([^-]+)$", title)
+                    if m:
+                        title, source = m.group(1).strip(), m.group(2).strip()
                 items.append(
                     {
-                        "source": (feed.feed.get("title") or url).strip(),
+                        "source": source,
                         "title": title,
                         "link": link,
                         "summary": _clean(e.get("summary", "")),
