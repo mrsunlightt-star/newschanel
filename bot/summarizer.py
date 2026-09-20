@@ -13,9 +13,9 @@ from . import config
 
 log = logging.getLogger(__name__)
 
-PROMPT = """你是一名科技资讯编辑。请根据下面的新闻内容生成摘要：
-- summary_zh: 80-150 字的中文摘要，突出关键事实，不夸张不脑补
-- summary_en: 80-150 word English summary, plain text
+PROMPT = """你是一名科技资讯编辑。请先判断下面新闻内容的语言，再生成摘要：
+- summary_zh: 80-150 字的中文摘要，突出关键事实，不夸张不脑补（原文为英文时即翻译提炼为中文）
+- summary_en: 严格执行——若内容为中文，此字段输出空字符串 ""；若内容为英文或其他语言，此字段必须输出 80-150 words 的英文摘要作为对照，绝不能留空
 
 只输出一个 JSON 对象，格式如下，不要输出任何其他文字：
 {{"summary_zh": "...", "summary_en": "..."}}

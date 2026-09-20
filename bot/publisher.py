@@ -21,7 +21,8 @@ def render(item: dict, digest: dict | None) -> str:
     if not zh:  # 摘要失败时降级为 RSS 自带概要或标题
         zh = item["summary"] or item["title"]
 
-    parts = [f"📰 <b>{html.escape(item['title'])}</b>", f"【中文】{html.escape(zh)}"]
+    # 中文源：只有【摘要】段；英文源：【摘要】+【EN】对照；两种情况都保留阅读原文入口
+    parts = [f"📰 <b>{html.escape(item['title'])}</b>", f"【摘要】{html.escape(zh)}"]
     if en:
         parts.append(f"【EN】{html.escape(en)}")
     parts.append(f"🔗 <a href=\"{html.escape(item['link'])}\">阅读原文</a>")
