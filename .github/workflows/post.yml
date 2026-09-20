@@ -1,0 +1,52 @@
+name: post-news
+
+on:
+  schedule:
+    # 每 2 小时运行一次（UTC 时间；GitHub cron 有 5-30 分钟的高峰延迟，属正常现象）
+    - cron: "0 */2 * * *"
+  workflow_dispatch: {}
+
+# 允许 workflow 用 GITHUB_TOKEN 把 data/news.db 提交回仓库
+permissions:
+  contents: write
+
+concurrency:
+  group: post-news
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run pipeline
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}
+          LLM_MODEL: ${{ vars.LLM_MODEL }}
+          RSS_FEEDS: ${{ vars.RSS_FEEDS }}
+        run: python -m bot.main
+
+      - name: Commit database back
+        run: |
+          git config user.name "newschanel-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/news.db
+          if git diff --cached --quiet; then
+            echo "数据库无变化，跳过提交"
+          else
+            git commit -m "chore: update news.db [skip ci]"
+            git push
+          fi
