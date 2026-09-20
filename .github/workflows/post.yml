@@ -2,8 +2,9 @@ name: post-news
 
 on:
   schedule:
-    # 每 30 分钟运行一次（UTC 时间；GitHub cron 有 5-30 分钟的高峰延迟，属正常现象）
-    - cron: "*/30 * * * *"
+    # 每小时第 7/37 分运行——官方文档明确：整点是调度高峰，负载过高时排队任务会被
+    # 直接丢弃（不重试）；原 */30 恰好全撞高峰，上线以来一次都没被调度过
+    - cron: "7,37 * * * *"
   workflow_dispatch: {}
 
 # 允许 workflow 用 GITHUB_TOKEN 把 data/news.db 提交回仓库
