@@ -29,10 +29,10 @@ _load_dotenv()
 BOT_TOKEN = _env("TELEGRAM_BOT_TOKEN")
 CHAT_ID = _env("TELEGRAM_CHAT_ID")
 
-# --- LLM：任意 OpenAI 兼容接口（Groq / Gemini 的 OpenAI 端点 / OpenRouter / DeepSeek 等）---
+# --- LLM：任意 OpenAI 兼容接口（智谱 / Groq / Gemini 的 OpenAI 端点 / OpenRouter 等）---
 LLM_API_KEY = _env("LLM_API_KEY")
-LLM_BASE_URL = _env("LLM_BASE_URL", "https://api.groq.com/openai/v1")
-LLM_MODEL = _env("LLM_MODEL", "qwen/qwen3.8-27b")
+LLM_BASE_URL = _env("LLM_BASE_URL", "https://open.bigmodel.cn/api/paas/v4")
+LLM_MODEL = _env("LLM_MODEL", "glm-4.7-flash")
 # 输出 token 预算：推理模型的思考过程也计入输出。
 # Groq 免费档 qwen3.8-27b 的 OTPM 上限是 1000，max_tokens 必须低于它
 LLM_MAX_TOKENS = int(os.environ.get("LLM_MAX_TOKENS", "950"))
