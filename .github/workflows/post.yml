@@ -2,8 +2,8 @@ name: post-news
 
 on:
   schedule:
-    # 每 2 小时运行一次（UTC 时间；GitHub cron 有 5-30 分钟的高峰延迟，属正常现象）
-    - cron: "0 */2 * * *"
+    # 每 30 分钟运行一次（UTC 时间；GitHub cron 有 5-30 分钟的高峰延迟，属正常现象）
+    - cron: "*/30 * * * *"
   workflow_dispatch: {}
 
 # 允许 workflow 用 GITHUB_TOKEN 把 data/news.db 提交回仓库
