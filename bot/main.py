@@ -34,11 +34,11 @@ def run(dry_run: bool) -> int:
         digest = summarizer.summarize(item["title"], item["source"], item["summary"])
         if digest is None:
             log.warning("摘要生成失败，降级用原文概要: %s", item["title"])
-        if not item.get("image"):
-            # RSS 没带图时才抓文章页找 og:image（每轮最多 5 次额外请求）
-            item["image"] = fetcher.og_image(item["link"])
+        image = ""
+        if config.CARD_MODE == "image":  # 纯文字模式跳过一切图片抓取，省时省流量
+            image = item.get("image", "") or fetcher.og_image(item["link"])
         caption = publisher.render(item, digest)
-        message_id = publisher.deliver(item.get("image", ""), caption)
+        message_id = publisher.deliver(image, caption)
         if message_id:
             dedup.mark_posted(item["link"], item["title"])
             sent += 1

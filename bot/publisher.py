@@ -50,7 +50,7 @@ def _nav_line() -> str:
             links.append(
                 f'<a href="{html.escape(url, quote=True)}">{html.escape(name)}</a>'
             )
-    return " ".join(links)
+    return " · ".join(links)
 
 
 def render(item: dict, digest: dict | None) -> str:

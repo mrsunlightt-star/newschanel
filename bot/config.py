@@ -58,6 +58,9 @@ CHANNEL_LINKS = _env("CHANNEL_LINKS", "📢 频道|https://t.me/techscinew")
 COVER_ASPECT = _env("COVER_ASPECT", "16:9")
 COVER_WIDTH = int(os.environ.get("COVER_WIDTH", "1280"))  # 裁剪后目标宽度（像素）
 
+# 卡片形态：text = 紧凑纯文字卡片（无图，一屏可刷十几条）；image = 宽幅封面图媒体卡片
+CARD_MODE = _env("CARD_MODE", "text")
+
 DB_PATH = os.environ.get(
     "DB_PATH",
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "news.db"),
