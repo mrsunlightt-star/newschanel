@@ -8,6 +8,7 @@
     📢 频道导航行（可配置）
 """
 import html
+import io
 import logging
 import re
 
@@ -97,23 +98,79 @@ def render(item: dict, digest: dict | None) -> str:
     return caption
 
 
+def _crop_wide(image_url: str) -> bytes | None:
+    """下载封面图，统一居中裁剪为宽幅比例并压缩，返回 JPEG 字节；失败返回 None。
+
+    宽幅卡片在 Telegram 里占屏高度小，一屏能看到更多帖子；
+    本地下载处理也顺带绕过了部分网站的图片防盗链。
+    """
+    try:
+        from PIL import Image
+    except ImportError:
+        log.warning("未安装 Pillow，跳过封面裁剪")
+        return None
+    try:
+        resp = requests.get(
+            image_url,
+            headers={"User-Agent": "Mozilla/5.0 (compatible; newschanel-bot/1.0)"},
+            timeout=15,
+        )
+        if resp.status_code != 200 or len(resp.content) > 15 * 1024 * 1024:
+            return None
+        img = Image.open(io.BytesIO(resp.content)).convert("RGB")
+    except Exception as exc:
+        log.warning("封面图下载/解析失败: %s", exc)
+        return None
+    w, h = img.size
+    if w < 200 or h < 120:  # 太小的图裁剪没有意义，交由原图直发
+        return None
+    try:
+        aw, ah = (int(x) for x in config.COVER_ASPECT.split(":"))
+        if aw <= 0 or ah <= 0:
+            raise ValueError
+    except Exception:
+        aw, ah = 16, 9
+    ratio, target = w / h, aw / ah
+    if ratio < target:  # 偏竖：保宽裁高，重心略偏上保留主体
+        new_h = int(w / target)
+        top = int((h - new_h) * 0.40)
+        img = img.crop((0, top, w, top + new_h))
+    elif ratio > target:  # 偏横：保高裁宽
+        new_w = int(h * target)
+        left = (w - new_w) // 2
+        img = img.crop((left, 0, left + new_w, h))
+    if img.width > config.COVER_WIDTH:
+        img = img.resize(
+            (config.COVER_WIDTH, int(img.height * config.COVER_WIDTH / img.width)),
+            Image.LANCZOS,
+        )
+    buf = io.BytesIO()
+    img.save(buf, "JPEG", quality=85)
+    return buf.getvalue()
+
+
 def deliver(image_url: str, caption: str) -> int | None:
-    """有封面图走 sendPhoto 媒体卡片；无图或图片发送失败时降级为纯文字。"""
+    """有封面图走 sendPhoto 媒体卡片；无图或图片发送失败时降级为纯文字。
+
+    图片三级降级：本地裁剪成宽幅上传 → 原图 URL 直发 → 纯文字。
+    """
     if not config.BOT_TOKEN or not config.CHAT_ID:
         log.error("缺少 TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID，无法发送")
         return None
     if image_url:
+        base = {"chat_id": config.CHAT_ID, "caption": caption, "parse_mode": "HTML"}
+        api = f"https://api.telegram.org/bot{config.BOT_TOKEN}/sendPhoto"
         try:
-            resp = requests.post(
-                f"https://api.telegram.org/bot{config.BOT_TOKEN}/sendPhoto",
-                json={
-                    "chat_id": config.CHAT_ID,
-                    "photo": image_url,
-                    "caption": caption,
-                    "parse_mode": "HTML",
-                },
-                timeout=60,
-            )
+            cropped = _crop_wide(image_url)
+            if cropped:
+                resp = requests.post(
+                    api,
+                    data=base,
+                    files={"photo": ("cover.jpg", cropped, "image/jpeg")},
+                    timeout=90,
+                )
+            else:  # 裁剪失败（无 Pillow/下载失败/图太小），让 Telegram 自行抓原图
+                resp = requests.post(api, json={**base, "photo": image_url}, timeout=60)
             if resp.status_code == 200:
                 return resp.json()["result"]["message_id"]
             log.warning(

@@ -54,6 +54,10 @@ SHOW_LINK_PREVIEW = os.environ.get("SHOW_LINK_PREVIEW", "0") == "1"  # 是否显
 # 帖子底部导航行：逗号分隔多项，每项「名称|链接」，名称可含 emoji；留空则不显示
 CHANNEL_LINKS = _env("CHANNEL_LINKS", "📢 频道|https://t.me/techscinew")
 
+# 封面图统一裁剪为宽幅比例（宽版卡片，一屏可容纳更多帖子）；设为 0:0 保持原图比例
+COVER_ASPECT = _env("COVER_ASPECT", "16:9")
+COVER_WIDTH = int(os.environ.get("COVER_WIDTH", "1280"))  # 裁剪后目标宽度（像素）
+
 DB_PATH = os.environ.get(
     "DB_PATH",
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "news.db"),
