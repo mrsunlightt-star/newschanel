@@ -16,12 +16,30 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 log = logging.getLogger("newschanel")
 
 
+def _round_robin(items: list[dict], limit: int) -> list[dict]:
+    """按源轮转取样：每圈从每个源各取 1 条，保证一轮里内容来源多样、不霸屏。"""
+    by_source: dict[str, list[dict]] = {}
+    for it in items:
+        by_source.setdefault(it["source"], []).append(it)
+    picked: list[dict] = []
+    while len(picked) < limit and by_source:
+        for src in list(by_source):
+            group = by_source.get(src) or []
+            if group:
+                picked.append(group.pop(0))
+                if len(picked) >= limit:
+                    break
+            else:
+                by_source.pop(src)
+    return picked
+
+
 def run(dry_run: bool) -> int:
     os.makedirs(os.path.dirname(config.DB_PATH), exist_ok=True)
     items = fetcher.fetch_all()
     fresh = [i for i in items if not dedup.is_posted(i["link"])]
-    log.info("其中未发布过的新条目 %d 条", len(fresh))
-    candidates = fresh[: config.MAX_POSTS_PER_RUN]
+    log.info("其中未发布过的新条目 %d 条（涉及 %d 个源）", len(fresh), len({i["source"] for i in fresh}))
+    candidates = _round_robin(fresh, config.MAX_POSTS_PER_RUN)
     if not candidates:
         log.info("没有需要发布的新内容，本次结束")
         return 0
