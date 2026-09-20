@@ -1,4 +1,4 @@
-"""主流程：抓取 → 去重 → 摘要 → 发帖 → 标记。
+"""主流程：抓取 → 去重 → 封面图补齐 → 摘要 → 发帖 → 标记。
 
 用法：
     python -m bot.main            # 完整流程（需要配置密钥）
@@ -34,8 +34,11 @@ def run(dry_run: bool) -> int:
         digest = summarizer.summarize(item["title"], item["source"], item["summary"])
         if digest is None:
             log.warning("摘要生成失败，降级用原文概要: %s", item["title"])
-        text = publisher.render(item, digest)
-        message_id = publisher.send(text, item["link"])
+        if not item.get("image"):
+            # RSS 没带图时才抓文章页找 og:image（每轮最多 5 次额外请求）
+            item["image"] = fetcher.og_image(item["link"])
+        caption = publisher.render(item, digest)
+        message_id = publisher.deliver(item.get("image", ""), caption)
         if message_id:
             dedup.mark_posted(item["link"], item["title"])
             sent += 1

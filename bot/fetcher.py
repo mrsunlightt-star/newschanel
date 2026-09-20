@@ -4,10 +4,18 @@ import re
 from datetime import datetime, timedelta, timezone
 
 import feedparser
+import requests
 
 from . import config
 
 log = logging.getLogger(__name__)
+
+_IMG_TAG_RE = re.compile(r"<img[^>]+src=[\"']([^\"'>]+)[\"']", re.I)
+_OG_RE = re.compile(
+    r"<meta[^>]+(?:property|name)=[\"']og:image[\"'][^>]*content=[\"']([^\"'>]+)[\"']"
+    r"|<meta[^>]+content=[\"']([^\"'>]+)[\"'][^>]*(?:property|name)=[\"']og:image[\"']",
+    re.I,
+)
 
 
 def _entry_time(entry) -> datetime | None:
@@ -27,8 +35,58 @@ def _clean(text: str, limit: int = 600) -> str:
     return text[:limit]
 
 
+def _pick_url(url: str) -> str:
+    """基本校验：http(s) 开头、非 gif 动图，返回规范化 URL，否则空串。"""
+    url = (url or "").strip().replace("&amp;", "&")
+    if url.startswith("http") and not url.lower().split("?")[0].endswith(".gif"):
+        return url
+    return ""
+
+
+def _entry_image(entry) -> str:
+    """从 RSS 条目自带字段找封面图，不产生额外网络请求。找不到返回空串。"""
+    for key in ("media_content", "media_thumbnail"):
+        for media in entry.get(key) or []:
+            url = _pick_url(media.get("url"))
+            if url:
+                return url
+    for link in entry.get("links") or []:
+        if str(link.get("type") or "").startswith("image/"):
+            url = _pick_url(link.get("href"))
+            if url:
+                return url
+    match = _IMG_TAG_RE.search(entry.get("summary") or "")
+    if match:
+        return _pick_url(match.group(1))
+    return ""
+
+
+def og_image(link: str) -> str:
+    """抓取文章页面，从 og:image 提取封面图。失败返回空串（只读页面前 256KB）。"""
+    try:
+        resp = requests.get(
+            link,
+            headers={"User-Agent": "Mozilla/5.0 (compatible; newschanel-bot/1.0)"},
+            timeout=10,
+            stream=True,
+        )
+        page = ""
+        size = 0
+        for chunk in resp.iter_content(8192):
+            page += chunk.decode("utf-8", "ignore")
+            size += len(chunk)
+            if "og:image" in page or size > 262144:
+                break
+        match = _OG_RE.search(page)
+        if match:
+            return _pick_url(match.group(1) or match.group(2))
+    except Exception:
+        pass
+    return ""
+
+
 def fetch_all() -> list[dict]:
-    """返回候选条目列表：[{source, title, link, summary, published}]"""
+    """返回候选条目列表：[{source, title, link, summary, image, published}]"""
     since = datetime.now(timezone.utc) - timedelta(hours=config.FETCH_HOURS)
     items = []
     for url in config.RSS_FEEDS:
@@ -52,6 +110,7 @@ def fetch_all() -> list[dict]:
                         "title": title,
                         "link": link,
                         "summary": _clean(e.get("summary", "")),
+                        "image": _entry_image(e),
                         "published": published,
                     }
                 )

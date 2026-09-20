@@ -51,6 +51,9 @@ MAX_POSTS_PER_RUN = int(os.environ.get("MAX_POSTS_PER_RUN", "5"))  # 每次最�
 SEND_INTERVAL = int(os.environ.get("SEND_INTERVAL", "3"))  # 每条帖子的间隔秒数
 SHOW_LINK_PREVIEW = os.environ.get("SHOW_LINK_PREVIEW", "0") == "1"  # 是否显示链接预览
 
+# 帖子底部导航行：逗号分隔多项，每项「名称|链接」，名称可含 emoji；留空则不显示
+CHANNEL_LINKS = _env("CHANNEL_LINKS", "📢 频道|https://t.me/techscinew")
+
 DB_PATH = os.environ.get(
     "DB_PATH",
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "news.db"),
